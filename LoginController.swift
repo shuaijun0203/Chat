@@ -7,6 +7,9 @@
 //
 
 import UIKit
+import Firebase
+import FirebaseAuth
+import FirebaseDatabase
 
 class LoginController: UIViewController {
     
@@ -20,17 +23,56 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let loginRegisterButton:UIButton = {
+    lazy var loginRegisterButton:UIButton = {
         let button = UIButton()
         button.backgroundColor = UIColor.init(r: 100, g: 81, b: 81)
         button.setTitle("Register", for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitleColor(UIColor.white, for: .normal)
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+        button.addTarget(self, action: #selector(registerHandle), for: .touchUpInside)
         
         return button
     }()
 
+    func registerHandle(){
+        
+        guard let email = inputEmailTextField.text, let password = inputPasswordTextField.text,let username = inputNameTextField.text
+            else{
+                print("please insert the right email ")
+                return
+        }
+        
+        
+        FIRAuth.auth()?.createUser(withEmail: email, password: password, completion: { (user: FIRUser?, error) in
+            if error != nil{
+                print(error)
+                return
+            }
+            
+            guard let uid = user?.uid else{
+                return
+            }
+            
+            let ref = FIRDatabase.database().reference(fromURL: "https://chat-a9541.firebaseio.com/")
+            
+            let userRefs = ref.child("users").child(uid)
+
+            let userInfo = ["name": username,"email":email]
+            
+            userRefs.updateChildValues(userInfo, withCompletionBlock: { (err, userRefs) in
+                if err != nil{
+                    print(err)
+                    return
+                }
+                
+                print(" saved the user successfuly! ")
+            })
+            
+
+//            userRefs.updateChildValues(userInfo)
+        })
+    }
     
     let inputNameTextField:UITextField = {
         
